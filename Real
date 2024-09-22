@@ -156,7 +156,7 @@ end)
 -- Optimize the notification
 local loadTime = tick() - startTime
 StarterGui:SetCore("SendNotification", {
-    Title = "SPJ Reach",
+    Title = "Akram MPS Reach",
     Text = "Script loaded in: " .. string.format("%.2f", loadTime) .. " seconds.",
     Duration = 5,  -- Reduce duration for performance
 })
