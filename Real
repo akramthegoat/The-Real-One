@@ -1,0 +1,187 @@
+print('=======//========')
+local CoreGui = game:GetService('CoreGui')
+local list = {'Codex', 'Delta', 'Appleware'}
+local find10 = CoreGui:FindFirstChild(list)
+local startTime = tick()  -- Marca o início do tempo de carregamento
+print('UI Loading..')
+print('Loading Assets..')
+print('Loading Functions..')
+local DrRayLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/AZYsGithub/DrRay-UI-Library/main/DrRay.lua"))()
+local window = DrRayLibrary:Load("Akram MPS Reach (Paid)", "Default")
+local tab = DrRayLibrary.newTab("Main", "ImageIdHere")
+
+-- Services
+local UserInputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
+if find10 then
+    player:Kick('Ur executor is not supported, please download fluxus or VegaX.')
+end
+
+-- Variables
+local balls = {}
+local lastRefreshTime = os.time()
+local reach = 10
+local ballOwners = {}
+local reachCircle = nil
+local ballOwnerEnabled = true
+local plagEnabled = true
+local plagTouchCount = 0
+local plagMaxTouches = 2
+local ballColor = Color3.new(1, 0, 0) -- Default ball color is red
+local reachColor = Color3.new(0, 0, 1) -- Default reach circle color is blue
+local ballNames = {"TPS", "ESA", "MRS", "PRS", "MPS", "XYZ", "ABC", "LMN", "TRS"}
+
+-- Optimized ball refresh function
+local function refreshBalls()
+    table.clear(balls)
+    for _, v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("Part") and table.find(ballNames, v.Name) then
+            table.insert(balls, v)
+            v.Color = ballColor -- Set ball color when detected
+        end
+    end
+end
+
+-- Optimized Reach Circle Movement
+local function moveCircleSmoothly(targetPosition)
+    if not reachCircle then return end
+    reachCircle.Position = targetPosition -- Set position directly for more instant response
+end
+
+local function createReachCircle()
+    if reachCircle then
+        reachCircle.Size = Vector3.new(reach * 2, reach * 2, reach * 2)
+    else
+        reachCircle = Instance.new("Part")
+        reachCircle.Parent = Workspace
+        reachCircle.Shape = Enum.PartType.Ball
+        reachCircle.Size = Vector3.new(reach * 2, reach * 2, reach * 2)
+        reachCircle.Anchored = true
+        reachCircle.CanCollide = false
+        reachCircle.Transparency = 0.8
+        reachCircle.Material = Enum.Material.ForceField
+        reachCircle.Color = reachColor -- Set reach circle color
+
+        -- Update position more frequently (during RenderStepped)
+        RunService.RenderStepped:Connect(function()
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local targetPosition = player.Character.HumanoidRootPart.Position
+                moveCircleSmoothly(targetPosition) -- Immediate update for responsiveness
+            end
+        end)
+    end
+end
+
+-- Handle Quantum Input
+local debounce = false
+local function onQuantumInputBegan(input, gameProcessedEvent)
+    if debounce then return end
+    debounce = true
+
+    local ignoredKeys = {
+        [Enum.KeyCode.W] = true,
+        [Enum.KeyCode.A] = true,
+        [Enum.KeyCode.S] = true,
+        [Enum.KeyCode.D] = true,
+        [Enum.KeyCode.Space] = true,
+    }
+
+    if input.UserInputType == Enum.UserInputType.Keyboard and ignoredKeys[input.KeyCode] then
+        debounce = false
+        return
+    end
+
+    if not gameProcessedEvent then
+        if input.KeyCode == Enum.KeyCode.Comma then
+            reach = math.max(1, reach - 1) -- Ensure reach doesn't go below 1
+            StarterGui:SetCore("SendNotification", {
+                Title = "SPJ Reach",
+                Text = "SPJ reach set to: " .. reach,
+                Duration = 0.5,
+            })
+        elseif input.KeyCode == Enum.KeyCode.Period then
+            reach = reach + 1
+            StarterGui:SetCore("SendNotification", {
+                Title = "SPJ Reach",
+                Text = "SPJ reach set to: " .. reach,
+                Duration = 0.5,
+            })
+        end
+
+        refreshBalls()
+        -- Checking for balls more frequently during key events
+        for _, legName in pairs({"Right Leg", "Left Leg"}) do
+            local leg = player.Character:FindFirstChild(legName)
+            if leg then
+                for _, v in pairs(leg:GetDescendants()) do
+                    if v.Name == "TouchInterest" and v.Parent then
+                        for _, e in pairs(balls) do
+                            if (e.Position - leg.Position).magnitude < reach then
+                                if ballOwnerEnabled or (not ballOwners[e] or ballOwners[e] == player) then
+                                    if not ballOwners[e] then
+                                        ballOwners[e] = player
+                                    end
+                                    firetouchinterest(e, v.Parent, 0)
+                                    firetouchinterest(e, v.Parent, 1)
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    wait(0.1) -- Debounce to prevent rapid triggering
+    debounce = false
+end
+
+-- Connect input handler
+UserInputService.InputBegan:Connect(onQuantumInputBegan)
+
+tab.newToggle("BallOwner", "BallOwner, make u get the ball first.", true, function(toggleState)
+    ballOwnerEnabled = toggleState
+end)
+
+tab.newSlider("Reach", "Set Reach", 100, false, function(num)
+    reach = num
+    createReachCircle()
+end)
+
+-- Optimize the notification
+local loadTime = tick() - startTime
+StarterGui:SetCore("SendNotification", {
+    Title = "SPJ Reach",
+    Text = "Script loaded in: " .. string.format("%.2f", loadTime) .. " seconds.",
+    Duration = 5,  -- Reduce duration for performance
+})
+
+-- Ball detection happens more frequently during `RenderStepped`
+RunService.RenderStepped:Connect(function()
+    for _, legName in pairs({"Right Leg", "Left Leg"}) do
+        local leg = player.Character and player.Character:FindFirstChild(legName)
+        if leg then
+            for _, v in pairs(leg:GetDescendants()) do
+                if v.Name == "TouchInterest" and v.Parent then
+                    for _, e in pairs(balls) do
+                        if (e.Position - leg.Position).magnitude < reach then
+                            if not ballOwners[e] then
+                                ballOwners[e] = player
+                                firetouchinterest(e, v.Parent, 0)
+                                firetouchinterest(e, v.Parent, 1)
+                            elseif ballOwners[e] == player then
+                                firetouchinterest(e, v.Parent, 0)
+                                firetouchinterest(e, v.Parent, 1)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
