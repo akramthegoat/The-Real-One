@@ -185,3 +185,16 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
+
+tab.newSlider("Curve", "Set Curve", 100, false, function(num)
+    -- Service
+local replicatedstorage = game:GetService('ReplicatedStorage')
+local foldercurve = replicatedstorage.Values
+local function main()
+local foldercurve2 = foldercurve.CurveMultiplier -- Curve folder
+foldercurve2.Value = num -- U can change him
+end
+main()
+-- alr_dev
+end)
+
