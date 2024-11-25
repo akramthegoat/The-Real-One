@@ -148,7 +148,7 @@ tab.newToggle("BallOwner", "BallOwner, make u get the ball first.", true, functi
     ballOwnerEnabled = toggleState
 end)
 
-tab.newSlider("Reach", "Set Reach", 1000, false, function(num)
+tab.newSlider("Reach", "Set Reach", 100, false, function(num)
     reach = num
     createReachCircle()
 end)
